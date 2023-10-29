@@ -1,0 +1,23 @@
+version: '3.3'
+
+services:
+  nuxt:
+    container_name: ${COMPOSE_PROJECT_NAME}_nuxt_frontend
+    build:
+      context: ${PROJECT_BASE_DIR}
+      dockerfile: docker/Dockerfile
+    image: ${COMPOSE_PROJECT_NAME}_nuxt
+    command: npm run dev
+    volumes:
+      - ${PROJECT_BASE_DIR}:${WORK_DIR}
+      - ${WORK_DIR}/node_modules
+    ports:
+      - "${NUXT_PORT}:${NUXT_PORT}"
+      - "${VITE_PORT}:${VITE_PORT}"
+    networks:
+      - ${COMPOSE_PROJECT_NAME}-frontend-network
+
+#Docker Networks
+networks:
+  laranuxt-frontend-network:
+    driver: bridge
