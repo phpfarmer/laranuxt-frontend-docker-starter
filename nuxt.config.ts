@@ -6,6 +6,11 @@ export default defineNuxtConfig({
             autoprefixer: {},
         },
     },
+    runtimeConfig: {
+        public: {
+            apiBaseUrl: process.env.BASE_URL_BACKEND_API
+        }
+    },
     css: [
         '~/assets/css/main.css'
     ],
