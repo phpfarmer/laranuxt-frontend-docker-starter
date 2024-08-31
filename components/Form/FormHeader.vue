@@ -6,7 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="mb-8 space-y-2 text-center">
+  <div class="mb-8 space-y-2 text-left">
     <h1 class="text-2xl font-semibold">
       {{ title }}
     </h1>
