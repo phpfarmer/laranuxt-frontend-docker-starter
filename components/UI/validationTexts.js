@@ -1,0 +1,16 @@
+export default Object.freeze({
+  required: 'Please fill out this field.',
+  email: 'Email is not valid.',
+  minLength: 'This value is too short.',
+  minLength_min_8: 'The password must be at least 8 characters',
+  minLength_min_7: 'Value should have a length of 7',
+  maxLength_max_7: 'Value should have a length of 7',
+  minValue: 'Value is lower than the minimum allowed',
+  maxValue: 'Value is bigger than the maximum allowed',
+  sameAsPassword: 'Your password and password confirmation do not match.',
+  isPhone: 'Please add a valid phone number (no characters, slashes, parentheses etc. are allowed).',
+  mustAgree: 'You must agree.',
+  numeric: 'Requires only numeric values',
+  unique: 'Unique value required',
+  serverError: 'Invalid value',
+});
