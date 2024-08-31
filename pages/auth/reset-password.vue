@@ -61,7 +61,7 @@
 
 
 <script setup>
-import FormHeader from '~/components/Form/Header';
+import FormHeader from '~/components/Form/FormHeader.vue';
 import PrimaryButton from '~/components/UI/PrimaryButton';
 import InputError from '~/components/UI/InputError';
 import InputLabel from '~/components/UI/InputLabel';

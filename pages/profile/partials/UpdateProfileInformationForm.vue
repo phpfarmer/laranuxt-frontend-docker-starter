@@ -9,7 +9,7 @@ import {useField, useForm} from "vee-validate";
 import {useAuthStore} from "~/stores/auth";
 import {useAuthStorage} from "~/composables/auth";
 import {UNKNOWN_SERVER_ERROR_MESSAGE} from "~/static/texts";
-import FormHeader from '~/components/Form/Header';
+import FormHeader from '~/components/Form/FormHeader.vue';
 import FormTooManyAttempt from '~/components/Form/TooManyAttempt';
 
 import AlartErrorMessage from '~/components/Form/AlartErrorMessage';

@@ -39,7 +39,7 @@
 
 
 <script setup>
-import FormHeader from '~/components/Form/Header';
+import FormHeader from '~/components/Form/FormHeader.vue';
 import FormTooManyAttempt from '~/components/Form/TooManyAttempt';
 import PrimaryButton from '~/components/UI/PrimaryButton';
 import InputError from '~/components/UI/InputError';

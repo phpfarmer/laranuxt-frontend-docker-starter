@@ -1,28 +1,33 @@
 <template>
-  <div v-if="value.$error">
-    <div class="text-error text-xxs" v-for="errorMessage in errorMessages" :key="errorMessage" v-text="errorMessage" />
+  <div v-if="modelValue.$error">
+    <div
+        class="text-sm text-red-600"
+        v-for="errorMessage in errorMessages"
+        :key="errorMessage"
+        v-text="errorMessage"
+    />
   </div>
 </template>
 
-<script>
-import ValidationTexts from './validationTexts'
+<script setup>
+import { computed } from 'vue';
+import ValidationTexts from './validationTexts';
 
-export default {
-  name: 'ValidationMessage',
-
-  props: {
-    value: {
-      type: Object,
-      required: true,
-    },
+const props = defineProps({
+  modelValue: {
+    type: Object,
+    required: true,
   },
+});
 
-  computed: {
-    errorMessages() {
-      return (this.value && this.value.$errors) ? this.value.$errors.map(error => {
-        return (error.$message) ? error.$message : ValidationTexts[error.$validator];
-      }) : [];
-    }
+const errorMessages = computed(() => {
+  if (props.modelValue) {
+    const errors = [...props.modelValue.$errors];
+
+    return errors.map(error => {
+      return error.$message || ValidationTexts[error.$validator];
+    });
   }
-}
+  return [];
+});
 </script>
