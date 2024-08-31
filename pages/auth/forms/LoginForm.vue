@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-lg py-8 w-full max-w-md mx-auto">
+  <div class="rounded-lg px-8 py-8 w-full max-w-md mx-auto">
     <form v-if="!isTooManyAttempts" @submit.prevent="onSubmit">
       <FormHeader subTitle="Please enter your credentials" title="Login"/>
 
@@ -11,7 +11,6 @@
         <TextInput
             id="email"
             v-model="value.email"
-            @blur="v$.value.email.$touch()"
             :validationObject="v$.value.email"
             placeholder="i.e john@example.com"
             required
@@ -73,7 +72,6 @@ const props = defineProps({
 
 const success = ref('');
 const isTooManyAttempts = ref(0);
-const isSubmitDisabled = ref(false);
 const pending = ref(true);
 const error = ref(false);
 const message = ref(props.value.message || '');
@@ -81,11 +79,14 @@ const message = ref(props.value.message || '');
 const rules = {
   value: {
     email: { required, email },
-    password: { required, minLength: minLength(8) },
+    password: { required },
   },
 };
 
 const v$ = useVuelidate(rules, props);
+const isSubmitDisabled = computed(() => {
+  return v$.value.$invalid;
+});
 
 const router = useRouter();
 
