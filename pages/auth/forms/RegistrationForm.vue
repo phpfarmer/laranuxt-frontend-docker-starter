@@ -113,7 +113,7 @@ import {FormHeader, AlartErrorMessage, AlartSuccessMessage} from '~/components/F
 import {PrimaryButton, InputLabel, TextInput, Checkbox} from '~/components/UI/index';
 
 const props = defineProps({
-  value: { type: Object, default: () => ({ email: '', password: '', message: '' }) },
+  value: { type: Object, default: () => ({ name: '', email: '', password: '', message: '', password_confirmation: '', is_terms_and_condition: false, is_privacy_policy: false }) },
 });
 
 const success = ref('');
