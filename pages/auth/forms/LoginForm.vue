@@ -36,7 +36,7 @@
         </nuxt-link>
       </div>
 
-      <PrimaryButton :disabled="isSubmitDisabled" type="submit">
+      <PrimaryButton :disabled="pending" type="submit">
         Log in
       </PrimaryButton>
 
@@ -73,7 +73,7 @@ const props = defineProps({
 const status = ref('');
 const success = ref(false);
 const isTooManyAttempts = ref(0);
-const pending = ref(true);
+const pending = ref(false);
 const error = ref(false);
 const message = ref('');
 
@@ -104,6 +104,11 @@ onMounted(() => {
 });
 
 const onSubmit = async () => {
+  v$.value.$touch();
+  if (isSubmitDisabled.value) {
+    return false;
+  }
+
   const config = useRuntimeConfig();
   success.value = false;
   error.value = false;

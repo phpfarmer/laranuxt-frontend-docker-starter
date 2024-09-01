@@ -86,7 +86,7 @@
         </Checkbox>
       </div>
 
-      <PrimaryButton :disabled="isSubmitDisabled" class="mb-5" type="submit">
+      <PrimaryButton :disabled="pending" class="mb-5" type="submit">
         Register
       </PrimaryButton>
 
@@ -117,7 +117,7 @@ const props = defineProps({
 });
 
 const success = ref(false);
-const pending = ref(true);
+const pending = ref(false);
 const error = ref(false);
 const message = ref(props.value.message || '');
 
@@ -148,8 +148,12 @@ const router = useRouter();
 const emit = defineEmits(['continueNext']);
 
 const onSubmit = async () => {
-  const config = useRuntimeConfig();
   v$.value.$touch();
+  if (isSubmitDisabled.value) {
+    return false;
+  }
+
+  const config = useRuntimeConfig();
   success.value = false;
   error.value = false;
   message.value = null;

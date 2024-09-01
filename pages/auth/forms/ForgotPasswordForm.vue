@@ -24,7 +24,7 @@
         </nuxt-link>
       </div>
 
-      <PrimaryButton :disabled="isSubmitDisabled" type="submit">
+      <PrimaryButton :disabled="pending" type="submit">
         Send Password Reset Link
       </PrimaryButton>
     </form>
@@ -51,7 +51,7 @@ const props = defineProps({
 
 const success = ref(false);
 const isTooManyAttempts = ref(0);
-const pending = ref(true);
+const pending = ref(false);
 const error = ref(false);
 const message = ref('');
 
@@ -69,6 +69,11 @@ const isSubmitDisabled = computed(() => {
 const router = useRouter();
 
 const onSubmit = async () => {
+  v$.value.$touch();
+  if (isSubmitDisabled.value) {
+    return false;
+  }
+
   const config = useRuntimeConfig();
   success.value = false;
   error.value = false;
