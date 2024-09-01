@@ -51,7 +51,7 @@
 
     <div v-if="isTooManyAttempts" class="rounded-lg px-10 py-8 w-full max-w-md mx-auto">
       <FormHeader subTitle="Too many attempts to login" title="Login"/>
-      <TooManyAttempt>Please try again later after some time.</TooManyAttempt>
+      <FormTooManyAttempt>Please try again later after some time.</FormTooManyAttempt>
     </div>
   </div>
 </template>
@@ -63,7 +63,7 @@ import { useRuntimeConfig } from '#app';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email } from '@vuelidate/validators';
 import { useAuthStore } from '~/stores/auth';
-import {FormHeader, TooManyAttempt, AlartErrorMessage, AlartSuccessMessage} from '~/components/Form/index.js';
+import {FormHeader, FormTooManyAttempt, AlartErrorMessage, AlartSuccessMessage} from '~/components/Form/index.js';
 import {PrimaryButton, InputLabel, TextInput} from '~/components/UI/index';
 
 const props = defineProps({

@@ -1,78 +1,95 @@
 <script setup>
-import InputError from '~/components/UI/InputError.vue';
-import InputLabel from '~/components/UI/InputLabel.vue';
-import PrimaryButton from '~/components/UI/PrimaryButton.vue';
-import TextInput from '~/components/UI/TextInput.vue';
+import {InputLabel, PrimaryButton, TextInput} from '~/components/UI/index.js';
+import {FormTooManyAttempt, AlartErrorMessage, AlartSuccessMessage} from '~/components/Form/index.js';
 import {computed, ref} from 'vue';
-import {useNuxtApp, useRoute, useRouter} from "nuxt/app";
-import * as yup from "yup";
-import {useField, useForm} from "vee-validate";
+import {useRouter} from "nuxt/app";
+import {useVuelidate} from '@vuelidate/core';
+import {minLength, required, helpers} from '@vuelidate/validators';
 
-import FormTooManyAttempt from '~/components/Form/TooManyAttempt';
-import AlartErrorMessage from '~/components/Form/AlartErrorMessage';
-import AlartSuccessMessage from '~/components/Form/AlartSuccessMessage';
-import {UNKNOWN_SERVER_ERROR_MESSAGE} from "../../../static/texts";
-
-const {$apiCallPOST, $apiCallGET} = useNuxtApp()
-const error = ref(null)
-const success = ref(null)
-const errorFields = ['name', 'email'];
+const props = defineProps({
+  value: { type: Object, default: () => ({ current_password: '', password: '', password_confirmation: '' }) },
+});
 
 const router = useRouter()
-const route = useRoute()
 
-async function csrf() {
-  return $apiCallGET('/sanctum/csrf-cookie')
-}
-
-const schema = yup.object({
-  current_password: yup.string().required().label('Current Password'),
-  password: yup.string().required().label('Password'),
-  password_confirmation: yup.string().required().oneOf([yup.ref('password'), null], 'Passwords must match').label('Password Confirmation'),
-})
-
-const {handleSubmit, errors, isSubmitting, submitCount} = useForm({
-  validationSchema: schema,
-})
-
-const {value: currentPasswordValue} = useField('current_password');
-const {value: passwordValue} = useField('password');
-const {value: passwordConfirmationValue} = useField('password_confirmation');
-
-const isSubmitDisabled = computed(() => {
-  return isSubmitting.value
-})
+const loading = ref(false)
+const success = ref(false)
+const error = ref(false);
+const message = ref('');
+const submitCount = ref(0);
 
 const isTooManyAttempts = computed(() => {
   return submitCount.value >= 5
 });
 
-const isValidationErrorExists = computed(() => {
-  return Object.keys(errors.value).filter(fieldName => errorFields.some(key => key === fieldName)).length > 0
-})
-
-const onSubmit = handleSubmit(async (values) => {
-  await csrf();
-  isSubmitting.value = true
-  success.value = null;
-  error.value = null;
-
-  await $apiCallPOST('/api/account/password-change', {
-    body: values,
-    onResponse({request, response, options}) {
-      if (response.status === 200) {
-        success.value = response._data?.message;
-      } else {
-        error.value = (response?._data?.message) ? response._data?.message : UNKNOWN_SERVER_ERROR_MESSAGE
-      }
+const rules = {
+  value: {
+    current_password: {required},
+    password: { required, minLength: minLength(8) },
+    password_confirmation: {required,
+      sameAsPassword: helpers.withParams(
+          { type: 'sameAsPassword', message: 'Passwords must match.' },
+          function (fieldValue, parentVm) {
+            return fieldValue === parentVm.password;
+          }
+      )
     },
-    onResponseError({request, response}) {
-      error.value = (response?._data?.message) ? response._data?.message : UNKNOWN_SERVER_ERROR_MESSAGE
-    }
-  })
+  }
+};
 
-  isSubmitting.value = false
-})
+const v$ = useVuelidate(rules, props);
+const isSubmitDisabled = computed(() => {
+  return v$.value.$invalid;
+});
+
+const onSubmit = async () => {
+  v$.value.$touch();
+  if (isSubmitDisabled.value) {
+    return false;
+  }
+
+  const config = useRuntimeConfig();
+  success.value = false;
+  error.value = false;
+  message.value = null;
+  loading.value = true;
+
+  try {
+    const response = await fetch(`${config.public.apiBaseUrl}/api/account/password-change`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        current_password: props.value.current_password,
+        password: props.value.password,
+        password_confirmation: props.value.password_confirmation,
+      }),
+    });
+
+    if (!response.ok) {
+      const responseData = await response.json();
+      let errorMessage = 'Unable to submit profile password update request.';
+
+      if (responseData.errors && typeof responseData.errors === 'object') {
+        const firstErrorField = Object.keys(responseData.errors)[0];
+        errorMessage = responseData.errors[firstErrorField][0];
+      }
+      throw new Error(errorMessage);
+    } else {
+      const responseData = await response.json();
+      message.value = responseData.message;
+      success.value = true;
+    }
+  } catch (err) {
+    message.value = err.message;
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -85,8 +102,8 @@ const onSubmit = handleSubmit(async (values) => {
       </p>
     </header>
 
-    <AlartSuccessMessage v-if="success && !isTooManyAttempts">{{ success }}</AlartSuccessMessage>
-    <AlartErrorMessage v-if="error && !isTooManyAttempts">{{ error }}</AlartErrorMessage>
+    <AlartSuccessMessage v-if="success && !isTooManyAttempts">{{ message }}</AlartSuccessMessage>
+    <AlartErrorMessage v-if="error && !isTooManyAttempts">{{ message }}</AlartErrorMessage>
 
     <form v-if="!isTooManyAttempts" class="mt-6 space-y-6" @submit.prevent="onSubmit">
       <div>
@@ -94,14 +111,11 @@ const onSubmit = handleSubmit(async (values) => {
 
         <TextInput
             id="current_password"
-            ref="currentPasswordInput"
-            v-model="currentPasswordValue"
-            autocomplete="current-password"
+            v-model="value.current_password"
+            :validationObject="v$.value.current_password"
             class="mt-1 block w-full"
             type="password"
         />
-
-        <InputError :message="errors.current_password" class="mt-2"/>
       </div>
 
       <div>
@@ -109,14 +123,11 @@ const onSubmit = handleSubmit(async (values) => {
 
         <TextInput
             id="password"
-            ref="passwordInput"
-            v-model="passwordValue"
-            autocomplete="new-password"
+            v-model="value.password"
+            :validationObject="v$.value.password"
             class="mt-1 block w-full"
             type="password"
         />
-
-        <InputError :message="errors.password" class="mt-2"/>
       </div>
 
       <div>
@@ -124,17 +135,15 @@ const onSubmit = handleSubmit(async (values) => {
 
         <TextInput
             id="password_confirmation"
-            v-model="passwordConfirmationValue"
-            autocomplete="new-password"
+            v-model="value.password_confirmation"
+            :validationObject="v$.value.password_confirmation"
             class="mt-1 block w-full"
             type="password"
         />
-
-        <InputError :message="errors.password_confirmation" class="mt-2"/>
       </div>
 
       <div class="flex items-center gap-4">
-        <PrimaryButton :disabled="isSubmitDisabled || isValidationErrorExists" type="submit">Save</PrimaryButton>
+        <PrimaryButton :disabled="loading" type="submit">Save</PrimaryButton>
 
         <Transition class="transition ease-in-out" enter-from-class="opacity-0" leave-to-class="opacity-0">
           <p v-if="false" class="text-sm text-gray-600">Saved.</p>

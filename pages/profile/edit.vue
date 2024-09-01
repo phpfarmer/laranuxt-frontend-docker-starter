@@ -47,6 +47,9 @@ const form = ref({
   user: {
     name: '',
     email: '',
+    current_password: '',
+    password: '',
+    password_confirmation: '',
   }
 });
 
@@ -68,7 +71,7 @@ const updateUser = (newValue) => {
             <ul>
               <ResponsiveNavLink :active="true" :href="'/profile/edit'"> Profile</ResponsiveNavLink>
               <ResponsiveNavLink as="button" method="post" @click="onLogout">
-                Log Out
+                Log out
               </ResponsiveNavLink>
             </ul>
           </div>
@@ -85,7 +88,7 @@ const updateUser = (newValue) => {
           </div>
 
           <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">
-            <UpdatePasswordForm class="max-w-full"/>
+            <UpdatePasswordForm :value="form.user" @update:value="updateUser" class="max-w-full"/>
           </div>
 
           <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">

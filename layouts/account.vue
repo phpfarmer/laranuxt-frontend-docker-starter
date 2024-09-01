@@ -91,7 +91,7 @@ const onLogout = async () => {
                   <template #content>
                     <DropdownLink :href="'/profile/edit'"> Profile</DropdownLink>
                     <DropdownLink as="button" method="post" @click="onLogout">
-                      Log Out
+                      Log out
                     </DropdownLink>
                   </template>
                 </Dropdown>
