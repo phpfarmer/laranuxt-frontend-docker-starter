@@ -5,14 +5,13 @@ import { useVuelidate } from '@vuelidate/core';
 import { required, email } from '@vuelidate/validators';
 import {useAuthStore} from "~/stores/auth";
 import {AlartErrorMessage, AlartSuccessMessage, FormTooManyAttempt, FormHeader} from '~/components/Form/index.js';
-import {useRuntimeConfig, useRoute, useRouter} from "nuxt/app";
+import {useRuntimeConfig, useRouter} from "nuxt/app";
 
 const props = defineProps({
-  value: { type: Object, default: () => ({ name: '', email: '' }) },
+  value: { type: Object, default: () => ({ id: '', name: '', email: '', email_update: null }) },
 });
 
 const router = useRouter()
-const route = useRoute()
 
 const loading = ref(false)
 const success = ref(false)
@@ -78,6 +77,101 @@ const onSubmit = async () => {
       message.value = responseData.message;
       success.value = true;
       await auth.setUser();
+
+      // Update verification status if available
+      if (responseData?.data?.email_update) {
+        props.value.email_update = responseData?.data?.email_update;
+      } else {
+        props.value.email_update = null;
+      }
+    }
+  } catch (err) {
+    message.value = err.message;
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+}
+
+const resendVerification = async () => {
+  const config = useRuntimeConfig();
+  error.value = false;
+  success.value = false;
+  message.value = null;
+  loading.value = true;
+
+  try {
+    const response = await fetch(`${config.public.apiBaseUrl}/api/account/email/verification-notification`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        id: props.value.id,
+        email: props.value.email_update.email,
+      }),
+    });
+
+    if (!response.ok) {
+      const responseData = await response.json();
+      let errorMessage = 'Unable to submit the request to resend the email verification.';
+
+      if (responseData.errors && typeof responseData.errors === 'object') {
+        const firstErrorField = Object.keys(responseData.errors)[0];
+        errorMessage = responseData.errors[firstErrorField][0];
+      }
+      throw new Error(errorMessage);
+    } else {
+      const responseData = await response.json();
+      message.value = responseData.message;
+      success.value = true;
+    }
+  } catch (err) {
+    message.value = err.message;
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+}
+
+const cancelEmailUpdate = async () => {
+  const config = useRuntimeConfig();
+  error.value = false;
+  success.value = false;
+  message.value = null;
+  loading.value = true;
+
+  try {
+    const response = await fetch(`${config.public.apiBaseUrl}/api/account/email/verification-notification`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        id: props.value.id,
+        email: props.value.email_update.email,
+      }),
+    });
+
+    if (!response.ok) {
+      const responseData = await response.json();
+      let errorMessage = 'Unable to submit the request to cancel the email change.';
+
+      if (responseData.errors && typeof responseData.errors === 'object') {
+        const firstErrorField = Object.keys(responseData.errors)[0];
+        errorMessage = responseData.errors[firstErrorField][0];
+      }
+      throw new Error(errorMessage);
+    } else {
+      const responseData = await response.json();
+      message.value = responseData.message;
+      success.value = true;
+
+      props.value.email_update = null;
     }
   } catch (err) {
     message.value = err.message;
@@ -128,25 +222,12 @@ const onSubmit = async () => {
         />
       </div>
 
-      <div v-if="props.mustVerifyEmail">
+      <div v-if="props.value.email_update">
         <p class="text-sm mt-2 text-gray-800">
-          Your email address is unverified.
-          <Link
-              :href="route('verification.send')"
-              as="button"
-              class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-              method="post"
-          >
-            Click here to re-send the verification email.
-          </Link>
+          Your new email address <strong>{{ props.value.email_update.email }}</strong> is not verified.
+          Please check your email and click the verification link. Didn’t get it?
+          <a href="#" @click.prevent="resendVerification" class="text-red-800">Resend verification email</a> or <a href="#" class="text-red-800" @click.prevent="cancelEmailUpdate">cancel this change</a>.
         </p>
-
-        <div
-            v-show="props.status === 'verification-link-sent'"
-            class="mt-2 font-medium text-sm text-green-600"
-        >
-          A new verification link has been sent to your email address.
-        </div>
       </div>
 
       <div class="flex items-center gap-4">

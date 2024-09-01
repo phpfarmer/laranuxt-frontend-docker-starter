@@ -38,18 +38,22 @@ const fetchAndSetProfileData = async () => {
   const userData = await auth.fetchUserProfileData();
 
   if (userData) {
+    form.value.user.id = userData.id || '';
     form.value.user.name = userData.name || '';
     form.value.user.email = userData.email || '';
+    form.value.user.email_update = userData.email_update || null;
   }
 }
 
 const form = ref({
   user: {
+    id: '',
     name: '',
     email: '',
     current_password: '',
     password: '',
     password_confirmation: '',
+    email_update: '',
   }
 });
 
