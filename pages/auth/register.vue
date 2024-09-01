@@ -43,12 +43,6 @@ const formCurrentStep = ref(props.initialStep);
 const currentForm = computed(() => {
   return formCurrentStep.value === 1 ? Step1 : Step2;
 });
-const route = useRoute();
-const loading = ref(true);
-
-onMounted(() => {
-  loading.value = false;
-});
 
 const continueNext = () => {
   formCurrentStep.value++;

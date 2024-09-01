@@ -61,7 +61,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRuntimeConfig } from '#app';
 import { useVuelidate } from '@vuelidate/core';
-import { minLength, required, email } from '@vuelidate/validators';
+import { required, email } from '@vuelidate/validators';
 import { useAuthStore } from '~/stores/auth';
 import {FormHeader, TooManyAttempt, AlartErrorMessage, AlartSuccessMessage} from '~/components/Form/index.js';
 import {PrimaryButton, InputLabel, TextInput} from '~/components/UI/index';
@@ -70,7 +70,8 @@ const props = defineProps({
   value: { type: Object, default: () => ({ email: '', password: '', message: '' }) },
 });
 
-const success = ref('');
+const status = ref('');
+const success = ref(false);
 const isTooManyAttempts = ref(0);
 const pending = ref(true);
 const error = ref(false);
@@ -89,6 +90,18 @@ const isSubmitDisabled = computed(() => {
 });
 
 const router = useRouter();
+
+onMounted(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  success.value = (urlParams.get('status') === 'success');
+  error.value = (urlParams.get('status') === 'error');
+  message.value = decodeURIComponent(urlParams.get('message'));
+
+  const emailParam = urlParams.get('email');
+  if (emailParam) {
+    props.value.email = decodeURIComponent(emailParam);
+  }
+});
 
 const onSubmit = async () => {
   const config = useRuntimeConfig();
