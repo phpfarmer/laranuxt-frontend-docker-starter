@@ -38,6 +38,8 @@ export const useAuthStore = defineStore('auth', {
         },
         async logout() :Promise<void> {
             const config = useRuntimeConfig();
+            await fetch(`${config.public.apiBaseUrl}/sanctum/csrf-cookie`);
+
             await fetch(`${config.public.apiBaseUrl}/logout`, {
                 method: 'POST',
                 headers: {
@@ -50,4 +52,10 @@ export const useAuthStore = defineStore('auth', {
             this.token = null;
         },
     },
+
+    getters: {
+        isUserLoggedIn(state): boolean {
+            return !!state.user?.id;
+        }
+    }
 });

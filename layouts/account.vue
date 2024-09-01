@@ -10,24 +10,22 @@ import {useState} from "#app";
 import {useNuxtApp, useRouter} from "nuxt/app";
 
 const showingNavigationDropdown = ref(false);
-const {loggedIn, user} = useAuthStore()
+const {user} = useAuthStore()
 const {$apiCallPOST, $apiCallGET} = useNuxtApp()
 
 const title = useState('title', () => 'laranuxt - Craft, Customize, Create')
 
-async function csrf() {
-  return $apiCallGET('/sanctum/csrf-cookie')
-}
-
 const auth = useAuthStore()
 const router = useRouter()
-const onLogout = async () => {
-  await csrf();
 
+const loggedIn = computed(() => {
+  return auth.isUserLoggedIn;
+});
+
+const onLogout = async () => {
   try {
-    await $apiCallPOST('/logout')
-    auth.logout()
-    router.push('/auth/login')
+    await auth.logout();
+    router.push('/auth/login');
   } catch (e) {
     console.log(e);
   }
