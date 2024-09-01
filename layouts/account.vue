@@ -1,17 +1,12 @@
 <script lang="ts" setup>
 import {ref} from 'vue';
 import ApplicationLogo from '@/components/ApplicationLogo.vue';
-import Dropdown from '@/components/UI/Dropdown.vue';
-import DropdownLink from '@/components/UI/DropdownLink.vue';
-import NavLink from '@/components/UI/NavLink.vue';
-import ResponsiveNavLink from '@/components/UI/ResponsiveNavLink.vue';
+import {Dropdown, DropdownLink, NavLink, ResponsiveNavLink} from '@/components/UI/index';
 import {useAuthStore} from '~/stores/auth'
-import {useState} from "#app";
-import {useNuxtApp, useRouter} from "nuxt/app";
+import {useState, useRouter} from "nuxt/app";
 
 const showingNavigationDropdown = ref(false);
 const {user} = useAuthStore()
-const {$apiCallPOST, $apiCallGET} = useNuxtApp()
 
 const title = useState('title', () => 'laranuxt - Craft, Customize, Create')
 
