@@ -49,7 +49,6 @@ const isSubmitDisabled = computed(() => {
 const auth = useAuthStore()
 const router = useRouter()
 const onSubmit = handleSubmit(async (values) => {
-  console.log(values);
   await csrf();
   isSubmitting.value = true
   success.value = null;
@@ -63,8 +62,8 @@ const onSubmit = handleSubmit(async (values) => {
         success.value = response._data?.message;
 
         setTimeout(async () => {
-          auth.logout()
-          await router.push('/auth/login')
+          await auth.logout();
+          router.push('/auth/login');
         }, 1000);
       }
     },

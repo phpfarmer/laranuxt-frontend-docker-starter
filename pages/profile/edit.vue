@@ -16,23 +16,15 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const {$apiCallPOST, $apiCallGET} = useNuxtApp()
-
 const title = useState('title')
-
-async function csrf() {
-  return $apiCallGET('/sanctum/csrf-cookie')
-}
 
 const auth = useAuthStore()
 const router = useRouter()
-const onLogout = async () => {
-  await csrf();
 
+const onLogout = async () => {
   try {
-    await $apiCallPOST('/logout')
-    auth.logout()
-    router.push('/auth/login')
+    await auth.logout();
+    router.push('/auth/login');
   } catch (e) {
     console.log(e);
   }
