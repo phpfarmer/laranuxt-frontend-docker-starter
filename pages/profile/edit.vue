@@ -92,7 +92,7 @@ const updateUser = (newValue) => {
           </div>
 
           <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">
-            <DeleteUserForm class="max-w-full"/>
+            <DeleteUserForm :value="form.user" @update:value="updateUser" class="max-w-full"/>
           </div>
 
         </div>
