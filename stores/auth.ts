@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import {useRuntimeConfig} from "nuxt/app";
+import { useRuntimeConfig } from 'nuxt/app';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -11,11 +11,16 @@ export const useAuthStore = defineStore('auth', {
         setToken(token) : void {
             this.token = token;
         },
-        async fetchUser() :Promise<void> {
-            if (this.user) {
-                return;
+        async fetchUser() : Promise<any> {
+            if (!this.user) {
+                this.user = await this.fetchUserProfileData();
             }
-
+            return this.user;
+        },
+        async setUser() : Promise<any> {
+            this.user = await this.fetchUserProfileData();
+        },
+        async fetchUserProfileData() : Promise<any> {
             try {
                 const config = useRuntimeConfig();
                 const response : Response = await fetch(`${config.public.apiBaseUrl}/api/account/profile`, {
@@ -28,15 +33,15 @@ export const useAuthStore = defineStore('auth', {
                 });
 
                 if (response.ok) {
-                    this.user = await response.json();
+                    return await response.json();
                 } else {
-                    this.user = null;
+                    return null;
                 }
             } catch (error) {
-                this.user = null;
+                return null;
             }
         },
-        async logout() :Promise<void> {
+        async logout() : Promise<void> {
             const config = useRuntimeConfig();
             await fetch(`${config.public.apiBaseUrl}/sanctum/csrf-cookie`);
 

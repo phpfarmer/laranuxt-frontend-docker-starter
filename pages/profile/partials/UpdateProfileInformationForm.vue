@@ -1,130 +1,91 @@
 <script setup>
-import InputError from '~/components/UI/InputError.vue';
-import InputLabel from '~/components/UI/InputLabel.vue';
-import PrimaryButton from '~/components/UI/PrimaryButton.vue';
-import TextInput from '~/components/UI/TextInput.vue';
-import {computed, onMounted, ref, watch} from "vue";
-import * as yup from "yup";
-import {useField, useForm} from "vee-validate";
+import {InputLabel, PrimaryButton, TextInput} from '~/components/UI/index.js';
+import {computed, ref} from "vue";
+import { useVuelidate } from '@vuelidate/core';
+import { required, email } from '@vuelidate/validators';
 import {useAuthStore} from "~/stores/auth";
-import {useAuthStorage} from "~/composables/auth";
-import {UNKNOWN_SERVER_ERROR_MESSAGE} from "~/static/texts";
-import FormHeader from '~/components/Form/FormHeader.vue';
-import FormTooManyAttempt from '~/components/Form/TooManyAttempt';
-
-import AlartErrorMessage from '~/components/Form/AlartErrorMessage';
-import AlartSuccessMessage from '~/components/Form/AlartSuccessMessage';
-import {useNuxtApp, useRoute, useRouter} from "nuxt/app";
-
+import {AlartErrorMessage, AlartSuccessMessage, FormTooManyAttempt, FormHeader} from '~/components/Form/index.js';
+import {useRuntimeConfig, useRoute, useRouter} from "nuxt/app";
 
 const props = defineProps({
-  mustVerifyEmail: Boolean,
-  status: String,
+  value: { type: Object, default: () => ({ name: '', email: '' }) },
 });
-
-const {$apiCallPOST, $apiCallGET} = useNuxtApp()
-
-async function csrf() {
-  return $apiCallGET('/sanctum/csrf-cookie')
-}
 
 const router = useRouter()
 const route = useRoute()
 
-const name = ref(null);
-const email = ref(null);
-const success = ref(null)
-const error = ref(null);
-const errorFields = ['name', 'email'];
-
-const schema = yup.object({
-  name: yup.string().required().label('Name'),
-  email: yup.string().required().label('Email'),
-})
-
-const {handleSubmit, errors, isSubmitting, submitCount} = useForm({
-  validationSchema: schema,
-})
-
-const {value: nameValue} = useField('name');
-const {value: emailValue} = useField('email');
+const loading = ref(false)
+const success = ref(false)
+const error = ref(false);
+const message = ref('');
+const submitCount = ref(0);
 
 const auth = useAuthStore()
-const {store} = useAuthStorage()
 
 const isTooManyAttempts = computed(() => {
   return submitCount.value >= 5
 });
 
+const rules = {
+  value: {
+    name: { required },
+    email: { required, email },
+  },
+};
+
+const v$ = useVuelidate(rules, props);
 const isSubmitDisabled = computed(() => {
-  return isSubmitting.value
-})
+  return v$.value.$invalid;
+});
 
-const isValidationErrorExists = computed(() => {
-  return Object.keys(errors.value).filter(fieldName => errorFields.some(key => key === fieldName)).length > 0
-})
+const onSubmit = async () => {
+  v$.value.$touch();
+  if (isSubmitDisabled.value) {
+    return false;
+  }
 
-onMounted(async () => {
-  await fetchAndSetProfileData();
-})
+  const config = useRuntimeConfig();
+  success.value = false;
+  error.value = false;
+  message.value = null;
+  loading.value = true;
 
-const fetchAndSetProfileData = async () => {
-  await csrf();
-  const {data: user} = await $apiCallGET('/api/account/profile', {
-    onResponseError({request, response}) {
-      error.value = (response?._data?.message) ? response._data?.message : UNKNOWN_SERVER_ERROR_MESSAGE
-    }
-  });
+  try {
+    const response = await fetch(`${config.public.apiBaseUrl}/api/account/profile`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        name: props.value.name,
+        email: props.value.email,
+      }),
+    });
 
-  const {name, email} = user.value
-  nameValue.value = name
-  emailValue.value = email
-}
+    if (!response.ok) {
+      const responseData = await response.json();
+      let errorMessage = 'Unable to submit profile update request.';
 
-const onSubmit = handleSubmit(async (values) => {
-  await csrf();
-  isSubmitting.value = true
-  success.value = null;
-  error.value = null;
-
-  await $apiCallPOST('/api/account/profile', {
-    body: values,
-    async onResponse({request, response, options}) {
-      isSubmitting.value = false
-
-      if (response.status === 200) {
-        success.value = response._data?.message;
-
-        const {data: user} = await $apiCallGET('/api/account/profile')
-
-        watch(user, (loggedInUser) => {
-          store(loggedInUser)
-          auth.user = loggedInUser
-          auth.loggedIn = true
-
-          if (route.query?.next) {
-            //return router.push({
-            //  path: route.query.next
-            //})
-          } else {
-            //return router.push({
-            //  path: '/account/dashboard'
-            //})
-            //window.location.pathname = '/account/dashboard'
-          }
-        }, {
-          deep: true,
-          immediate: true
-        })
+      if (responseData.errors && typeof responseData.errors === 'object') {
+        const firstErrorField = Object.keys(responseData.errors)[0];
+        errorMessage = responseData.errors[firstErrorField][0];
       }
-    },
-    onResponseError({request, response}) {
-      error.value = (response?._data?.message) ? response._data?.message : UNKNOWN_SERVER_ERROR_MESSAGE
+      throw new Error(errorMessage);
+    } else {
+      const responseData = await response.json();
+      message.value = responseData.message;
+      success.value = true;
+      await auth.setUser();
     }
-  })
-
-  isSubmitting.value = false
-})
+  } catch (err) {
+    message.value = err.message;
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -136,8 +97,8 @@ const onSubmit = handleSubmit(async (values) => {
       </p>
     </header>
 
-    <AlartSuccessMessage v-if="success && !isTooManyAttempts">{{ success }}</AlartSuccessMessage>
-    <AlartErrorMessage v-if="error && !isTooManyAttempts">{{ error }}</AlartErrorMessage>
+    <AlartSuccessMessage v-if="success && !isTooManyAttempts">{{ message }}</AlartSuccessMessage>
+    <AlartErrorMessage v-if="error && !isTooManyAttempts">{{ message }}</AlartErrorMessage>
 
     <form v-if="!isTooManyAttempts" class="mt-6 space-y-6" @submit.prevent="onSubmit">
       <div>
@@ -145,15 +106,13 @@ const onSubmit = handleSubmit(async (values) => {
 
         <TextInput
             id="name"
-            v-model="nameValue"
-            autocomplete="name"
+            v-model="value.name"
+            :validationObject="v$.value.name"
             autofocus
             class="mt-1 block w-full"
             required
             type="text"
         />
-
-        <InputError :message="errors.name" class="mt-2"/>
       </div>
 
       <div>
@@ -161,14 +120,12 @@ const onSubmit = handleSubmit(async (values) => {
 
         <TextInput
             id="email"
-            v-model="emailValue"
-            autocomplete="email"
+            v-model="value.email"
+            :validationObject="v$.value.email"
             class="mt-1 block w-full"
             required
             type="email"
         />
-
-        <InputError :message="errors.email" class="mt-2"/>
       </div>
 
       <div v-if="props.mustVerifyEmail">
@@ -193,7 +150,7 @@ const onSubmit = handleSubmit(async (values) => {
       </div>
 
       <div class="flex items-center gap-4">
-        <PrimaryButton :disabled="isSubmitDisabled || isValidationErrorExists" type="submit">Save</PrimaryButton>
+        <PrimaryButton :disabled="loading" type="submit">Save</PrimaryButton>
 
         <Transition class="transition ease-in-out" enter-from-class="opacity-0" leave-to-class="opacity-0">
           <p v-if="false" class="text-sm text-gray-600">Saved.</p>

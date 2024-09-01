@@ -2,7 +2,7 @@
 import DeleteUserForm from './partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './partials/UpdateProfileInformationForm.vue';
-import {useNuxtApp, useState} from "nuxt/app";
+import {useState} from "nuxt/app";
 import ResponsiveNavLink from '@/components/UI/ResponsiveNavLink.vue';
 import {useAuthStore} from "../../stores/auth";
 
@@ -29,6 +29,30 @@ const onLogout = async () => {
     console.log(e);
   }
 }
+
+onMounted(async () => {
+  await fetchAndSetProfileData();
+})
+
+const fetchAndSetProfileData = async () => {
+  const userData = await auth.fetchUserProfileData();
+
+  if (userData) {
+    form.value.user.name = userData.name || '';
+    form.value.user.email = userData.email || '';
+  }
+}
+
+const form = ref({
+  user: {
+    name: '',
+    email: '',
+  }
+});
+
+const updateUser = (newValue) => {
+  form.value.user = newValue;
+};
 </script>
 
 <template>
@@ -55,8 +79,7 @@ const onLogout = async () => {
 
           <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">
             <UpdateProfileInformationForm
-                :must-verify-email="mustVerifyEmail"
-                :status="status"
+                :value="form.user" @update:value="updateUser"
                 class="max-w-full"
             />
           </div>
