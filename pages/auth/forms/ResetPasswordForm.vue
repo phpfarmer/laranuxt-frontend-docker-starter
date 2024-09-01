@@ -60,7 +60,7 @@
 
 <script setup>
 import { useVuelidate } from '@vuelidate/core';
-import { minLength, required, email, sameAs } from '@vuelidate/validators';
+import { minLength, required, email, helpers } from '@vuelidate/validators';
 import {AlartErrorMessage, FormHeader} from '~/components/Form/index.js';
 import {InputLabel, PrimaryButton, TextInput} from "~/components/UI/index.js";
 
@@ -77,7 +77,14 @@ const rules = {
   value: {
     email: { required, email },
     password: { required, minLength: minLength(8) },
-    password_confirmation: { required, sameAsPassword: sameAs(ref('password'), 'Passwords must match') },
+    password_confirmation: {required,
+      sameAsPassword: helpers.withParams(
+          { type: 'sameAsPassword', message: 'Passwords must match.' },
+          function (fieldValue, parentVm) {
+            return fieldValue === parentVm.password;
+          }
+      )
+    },
     token: { required, minLength: minLength(64) },
   },
 };
@@ -125,7 +132,7 @@ const onSubmit = async () => {
       message.value = responseData.message;
       success.value = true;
       const successMessage = encodeURIComponent('Your password has been successfully changed. Please log in.');
-      router.push(`/auth/login?status=success&message=${successMessage}`);
+      router.push(`/auth/login?status=success&email=${props.value.email}&message=${successMessage}`);
     }
   } catch (err) {
     message.value = err.message;

@@ -105,6 +105,7 @@ onMounted(() => {
 
 const onSubmit = async () => {
   const config = useRuntimeConfig();
+  success.value = false;
   error.value = false;
   message.value = null;
   pending.value = true;
