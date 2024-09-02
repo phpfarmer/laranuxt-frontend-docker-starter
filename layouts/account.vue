@@ -4,6 +4,7 @@ import ApplicationLogo from '@/components/ApplicationLogo.vue';
 import {Dropdown, DropdownLink, NavLink, ResponsiveNavLink} from '@/components/UI/index';
 import {useAuthStore} from '~/stores/auth'
 import {useState, useRouter} from "nuxt/app";
+import UserProfileAvatar from "~/components/users/UserProfileAvatar.vue";
 
 const showingNavigationDropdown = ref(false);
 const {user} = useAuthStore()
@@ -85,19 +86,7 @@ const onLogout = async () => {
                   </template>
 
                   <template #content>
-                    <div class="flex items-center px-4 py-2">
-                      <img
-                          :src="user?.profile_photo_url || 'https://via.placeholder.com/50'"
-                          alt="Profile Image"
-                          class="h-12 w-12 rounded-full object-cover"
-                      />
-                      <div class="ml-3 w-64">
-                        <p class="text-sm font-medium text-gray-900">{{ user?.name }}</p>
-                        <p class="text-sm text-gray-500 truncate max-w-[215px]" title="{{ user?.email }}">
-                          {{ user?.email }}
-                        </p>
-                      </div>
-                    </div>
+                    <user-profile-avatar :user="user"  />
 
                     <hr class="border-gray-200 my-2"/>
                     <div class="py-1">
