@@ -6,6 +6,7 @@ import { required, email } from '@vuelidate/validators';
 import {useAuthStore} from "~/stores/auth";
 import {AlartErrorMessage, AlartSuccessMessage, FormTooManyAttempt, FormHeader} from '~/components/Form/index.js';
 import {useRuntimeConfig, useRouter} from "nuxt/app";
+import ContentBox from "~/components/UI/ContentBox.vue";
 
 const props = defineProps({
   value: { type: Object, default: () => ({ id: '', name: '', email: '', email_update: null }) },
@@ -183,65 +184,63 @@ const cancelEmailUpdate = async () => {
 </script>
 
 <template>
-  <section>
-    <header class="space-y-2 mb-4">
-      <h2 class="text-lg font-medium text-gray-900">Profile Information</h2>
-      <p class="mt-1 text-sm text-gray-600">
-        Update your account's profile information and email address.
-      </p>
-    </header>
+  <content-box>
+    <template v-slot:content-title>
+      Profile Information
+    </template>
+    <template v-slot:content-sub-title>
+      Update your account's profile information and email address.
+    </template>
 
-    <AlartSuccessMessage v-if="success && !isTooManyAttempts">{{ message }}</AlartSuccessMessage>
-    <AlartErrorMessage v-if="error && !isTooManyAttempts">{{ message }}</AlartErrorMessage>
+    <template v-slot:default>
+      <AlartSuccessMessage v-if="success && !isTooManyAttempts">{{ message }}</AlartSuccessMessage>
+      <AlartErrorMessage v-if="error && !isTooManyAttempts">{{ message }}</AlartErrorMessage>
 
-    <form v-if="!isTooManyAttempts" class="mt-6 space-y-6" @submit.prevent="onSubmit">
-      <div>
-        <InputLabel for="name" value="Name"/>
+      <form v-if="!isTooManyAttempts" class="mt-6 space-y-6" @submit.prevent="onSubmit">
+        <div>
+          <InputLabel for="name" value="Name"/>
 
-        <TextInput
-            id="name"
-            v-model="value.name"
-            :validationObject="v$.value.name"
-            autofocus
-            class="mt-1 block w-full"
-            required
-            type="text"
-        />
+          <TextInput
+              id="name"
+              v-model="value.name"
+              :validationObject="v$.value.name"
+              autofocus
+              class="mt-1 block w-full"
+              required
+              type="text"
+          />
+        </div>
+
+        <div>
+          <InputLabel for="email" value="Email"/>
+
+          <TextInput
+              id="email"
+              v-model="value.email"
+              :validationObject="v$.value.email"
+              class="mt-1 block w-full"
+              required
+              type="email"
+          />
+        </div>
+
+        <div v-if="props.value.email_update">
+          <p class="text-sm mt-2 text-gray-800">
+            Your new email address <strong>{{ props.value.email_update.email }}</strong> is not verified.
+            Please check your email and click the verification link. Didn’t get it?
+            <a href="#" @click.prevent="resendVerification" class="text-red-800">Resend verification email</a> or <a href="#" class="text-red-800" @click.prevent="cancelEmailUpdate">cancel this change</a>.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <PrimaryButton :disabled="loading" type="submit">Save</PrimaryButton>
+        </div>
+      </form>
+
+      <div v-if="isTooManyAttempts" class="rounded-lg px-10 py-8 w-full max-w-md mx-auto text-left">
+        <FormHeader class="text-left" subTitle="Too many attempts to submit" title="Stop!"/>
+        <FormTooManyAttempt>Please try again later after some time.</FormTooManyAttempt>
       </div>
-
-      <div>
-        <InputLabel for="email" value="Email"/>
-
-        <TextInput
-            id="email"
-            v-model="value.email"
-            :validationObject="v$.value.email"
-            class="mt-1 block w-full"
-            required
-            type="email"
-        />
-      </div>
-
-      <div v-if="props.value.email_update">
-        <p class="text-sm mt-2 text-gray-800">
-          Your new email address <strong>{{ props.value.email_update.email }}</strong> is not verified.
-          Please check your email and click the verification link. Didn’t get it?
-          <a href="#" @click.prevent="resendVerification" class="text-red-800">Resend verification email</a> or <a href="#" class="text-red-800" @click.prevent="cancelEmailUpdate">cancel this change</a>.
-        </p>
-      </div>
-
-      <div class="flex items-center gap-4">
-        <PrimaryButton :disabled="loading" type="submit">Save</PrimaryButton>
-
-        <Transition class="transition ease-in-out" enter-from-class="opacity-0" leave-to-class="opacity-0">
-          <p v-if="false" class="text-sm text-gray-600">Saved.</p>
-        </Transition>
-      </div>
-    </form>
-
-    <div v-if="isTooManyAttempts" class="rounded-lg px-10 py-8 w-full max-w-md mx-auto text-left">
-      <FormHeader class="text-left" subTitle="Too many attempts to submit" title="Stop!"/>
-      <FormTooManyAttempt>Please try again later after some time.</FormTooManyAttempt>
-    </div>
-  </section>
+    </template>
+  </content-box>
 </template>

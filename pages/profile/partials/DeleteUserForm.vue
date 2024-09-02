@@ -6,6 +6,7 @@ import { required, minLength } from '@vuelidate/validators';
 import {computed, ref} from 'vue';
 import {useRouter} from "nuxt/app";
 import {useAuthStore} from "~/stores/auth";
+import ContentBox from "~/components/UI/ContentBox.vue";
 
 const props = defineProps({
   value: { type: Object, default: () => ({ password: '' }) },
@@ -94,63 +95,64 @@ const closeModal = () => {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <header>
-      <h2 class="text-lg font-medium text-gray-900">Delete Account</h2>
+  <content-box>
+    <template v-slot:content-title>
+      Delete Account
+    </template>
+    <template v-slot:content-sub-title>
+      Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting
+      your account, please download any data or information that you wish to retain.
+    </template>
 
-      <p class="mt-1 text-sm text-gray-600">
-        Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting
-        your account, please download any data or information that you wish to retain.
-      </p>
-    </header>
+    <template v-slot:default>
+      <DangerButton @click="confirmUserDeletion">Delete Account</DangerButton>
 
-    <DangerButton @click="confirmUserDeletion">Delete Account</DangerButton>
+      <Modal :show="confirmingUserDeletion" @close="closeModal" @submit.prevent="onSubmit">
+        <div class="p-6">
+          <h2 class="text-lg font-medium text-gray-900 mb-4">
+            Are you sure you want to delete your account?
+          </h2>
 
-    <Modal :show="confirmingUserDeletion" @close="closeModal" @submit.prevent="onSubmit">
-      <div class="p-6">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">
-          Are you sure you want to delete your account?
-        </h2>
+          <AlartSuccessMessage v-if="success">{{ message }}</AlartSuccessMessage>
+          <AlartErrorMessage v-if="error">{{ message }}</AlartErrorMessage>
 
-        <AlartSuccessMessage v-if="success">{{ message }}</AlartSuccessMessage>
-        <AlartErrorMessage v-if="error">{{ message }}</AlartErrorMessage>
+          <p class="mt-1 text-sm text-gray-600">
+            Once your account is deleted, all of its resources and data will be permanently deleted and you will be logged
+            out instantly! Please enter your password to confirm you would like to permanently delete your account.
+          </p>
 
-        <p class="mt-1 text-sm text-gray-600">
-          Once your account is deleted, all of its resources and data will be permanently deleted and you will be logged
-          out instantly! Please enter your password to confirm you would like to permanently delete your account.
-        </p>
+          <form class="mt-6 space-y-6" @submit.prevent="onSubmit">
+            <div class="mt-6">
+              <InputLabel class="sr-only" for="password" value="Password"/>
 
-        <form class="mt-6 space-y-6" @submit.prevent="onSubmit">
-          <div class="mt-6">
-            <InputLabel class="sr-only" for="password" value="Password"/>
+              <TextInput
+                  id="password"
+                  v-model="value.password"
+                  :validationObject="v$.value.password"
+                  class="mt-1 block w-3/4"
+                  placeholder="Password"
+                  type="password"
+                  @keyup.enter="onSubmit"
+              />
+            </div>
 
-            <TextInput
-                id="password"
-                v-model="value.password"
-                :validationObject="v$.value.password"
-                class="mt-1 block w-3/4"
-                placeholder="Password"
-                type="password"
-                @keyup.enter="onSubmit"
-            />
-          </div>
+            <div class="mt-6 flex justify-end">
+              <SecondaryButton @click="closeModal"> Cancel</SecondaryButton>
 
-          <div class="mt-6 flex justify-end">
-            <SecondaryButton @click="closeModal"> Cancel</SecondaryButton>
+              <DangerButton
+                  :class="{ 'opacity-25': false }"
+                  :disabled="loading"
+                  class="ml-3"
+                  type="submit"
+                  @click="onSubmit"
+              >
+                Delete Account
+              </DangerButton>
+            </div>
+          </form>
 
-            <DangerButton
-                :class="{ 'opacity-25': false }"
-                :disabled="loading"
-                class="ml-3"
-                type="submit"
-                @click="onSubmit"
-            >
-              Delete Account
-            </DangerButton>
-          </div>
-        </form>
-
-      </div>
-    </Modal>
-  </section>
+        </div>
+      </Modal>
+    </template>
+  </content-box>
 </template>
