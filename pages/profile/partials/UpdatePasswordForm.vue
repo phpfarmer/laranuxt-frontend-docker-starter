@@ -1,97 +1,38 @@
 <script setup>
-import {InputLabel, PrimaryButton, TextInput} from '~/components/UI/index.js';
-import {FormTooManyAttempt, AlartErrorMessage, AlartSuccessMessage} from '~/components/Form/index.js';
-import {computed, ref} from 'vue';
-import {useRouter} from "nuxt/app";
-import {useVuelidate} from '@vuelidate/core';
-import {minLength, required, helpers} from '@vuelidate/validators';
-import ContentBox from "~/components/UI/ContentBox.vue";
+import { InputLabel, PrimaryButton, TextInput, ContentBox } from '~/components/UI/index.js';
+import { FormTooManyAttempt, AlartErrorMessage, AlartSuccessMessage } from '~/components/Form/index.js';
+import { minLength, required, helpers } from '@vuelidate/validators';
+import { useFormHandler } from '~/composables/useFormHandler';
 
 const props = defineProps({
   value: { type: Object, default: () => ({ current_password: '', password: '', password_confirmation: '' }) },
 });
 
-const router = useRouter()
-
-const loading = ref(false)
-const success = ref(false)
-const error = ref(false);
-const message = ref('');
-const submitCount = ref(0);
-
-const isTooManyAttempts = computed(() => {
-  return submitCount.value >= 5
-});
-
 const rules = {
   value: {
-    current_password: {required},
+    current_password: { required },
     password: { required, minLength: minLength(8) },
-    password_confirmation: {required,
+    password_confirmation: {
+      required,
       sameAsPassword: helpers.withParams(
           { type: 'sameAsPassword', message: 'Passwords must match.' },
-          function (fieldValue, parentVm) {
-            return fieldValue === parentVm.password;
-          }
-      )
+          (fieldValue, parentVm) => fieldValue === parentVm.password
+      ),
     },
   }
 };
 
-const v$ = useVuelidate(rules, props);
-const isSubmitDisabled = computed(() => {
-  return v$.value.$invalid;
+const { v$, loading, success, error, message, onSubmit, isTooManyAttempts } = useFormHandler(rules, props, {
+  url: `${useRuntimeConfig().public.apiBaseUrl}/api/account/password-change`,
+  body: {
+    current_password: props.value.current_password,
+    password: props.value.password,
+    password_confirmation: props.value.password_confirmation,
+  },
+  errorMessage: 'Unable to submit profile password update request.',
 });
-
-const onSubmit = async () => {
-  v$.value.$touch();
-  if (isSubmitDisabled.value) {
-    return false;
-  }
-
-  const config = useRuntimeConfig();
-  success.value = false;
-  error.value = false;
-  message.value = null;
-  loading.value = true;
-
-  try {
-    const response = await fetch(`${config.public.apiBaseUrl}/api/account/password-change`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        current_password: props.value.current_password,
-        password: props.value.password,
-        password_confirmation: props.value.password_confirmation,
-      }),
-    });
-
-    if (!response.ok) {
-      const responseData = await response.json();
-      let errorMessage = 'Unable to submit profile password update request.';
-
-      if (responseData.errors && typeof responseData.errors === 'object') {
-        const firstErrorField = Object.keys(responseData.errors)[0];
-        errorMessage = responseData.errors[firstErrorField][0];
-      }
-      throw new Error(errorMessage);
-    } else {
-      const responseData = await response.json();
-      message.value = responseData.message;
-      success.value = true;
-    }
-  } catch (err) {
-    message.value = err.message;
-    error.value = true;
-  } finally {
-    loading.value = false;
-  }
-}
 </script>
+
 
 <template>
   <content-box>
@@ -148,10 +89,7 @@ const onSubmit = async () => {
         </div>
       </form>
 
-      <div v-if="isTooManyAttempts" class="rounded-lg px-10 py-8 w-full max-w-md mx-auto text-left">
-        <FormHeader class="text-left" subTitle="Too many attempts to submit" title="Stop!"/>
-        <FormTooManyAttempt>Please try again later after some time.</FormTooManyAttempt>
-      </div>
+      <FormTooManyAttempt v-if="isTooManyAttempts">Please try again later after some time.</FormTooManyAttempt>
     </template>
   </content-box>
 </template>
