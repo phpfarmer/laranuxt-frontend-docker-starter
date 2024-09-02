@@ -32,11 +32,9 @@ const onLogout = async () => {
     <Title>{{ title }}</Title>
     <div class="min-h-screen bg-gray-100">
       <nav class="bg-white border-b border-gray-100">
-        <!-- Primary Navigation Menu -->
         <div class="mx-auto px-6 sm:px-6 lg:px-8">
           <div class="flex justify-between h-16">
             <div class="flex">
-              <!-- Logo -->
               <div class="shrink-0 flex items-center">
                 <NuxtLink :to="'/'">
                   <ApplicationLogo
@@ -45,7 +43,6 @@ const onLogout = async () => {
                 </NuxtLink>
               </div>
 
-              <!-- Navigation Links -->
               <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                 <NavLink v-if="loggedIn" :active="true" :href="'/account/dashboard'">
                   Dashboard
@@ -62,9 +59,8 @@ const onLogout = async () => {
                 </NuxtLink>
               </div>
 
-              <!-- Settings Dropdown -->
               <div class="ml-3 relative">
-                <Dropdown v-if="loggedIn" align="right" width="48">
+                <Dropdown v-if="loggedIn" align="right" width="96">
                   <template #trigger>
                     <span class="inline-flex rounded-md">
                         <button
@@ -89,16 +85,35 @@ const onLogout = async () => {
                   </template>
 
                   <template #content>
-                    <DropdownLink :href="'/profile/edit'"> Profile</DropdownLink>
-                    <DropdownLink as="button" method="post" @click="onLogout">
-                      Log out
-                    </DropdownLink>
+                    <div class="flex items-center px-4 py-2">
+                      <img
+                          :src="user?.profile_photo_url || 'https://via.placeholder.com/50'"
+                          alt="Profile Image"
+                          class="h-12 w-12 rounded-full object-cover"
+                      />
+                      <div class="ml-3 w-64">
+                        <p class="text-sm font-medium text-gray-900">{{ user?.name }}</p>
+                        <p class="text-sm text-gray-500 truncate max-w-[215px]" title="{{ user?.email }}">
+                          {{ user?.email }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <hr class="border-gray-200 my-2"/>
+                    <div class="py-1">
+                      <DropdownLink :href="'/profile/edit'">Profile</DropdownLink>
+                      <DropdownLink :href="'/settings'">Settings</DropdownLink>
+                    </div>
+
+                    <hr class="border-gray-200 my-2"/>
+                    <div class="py-1">
+                      <DropdownLink as="button" method="post" @click="onLogout" class="cursor-pointer ">Log out</DropdownLink>
+                    </div>
                   </template>
                 </Dropdown>
               </div>
             </div>
 
-            <!-- Hamburger -->
             <div class="-mr-2 flex items-center sm:hidden">
               <button
                   class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out"
@@ -131,7 +146,6 @@ const onLogout = async () => {
           </div>
         </div>
 
-        <!-- Responsive Navigation Menu -->
         <div
             :class="{ block: showingNavigationDropdown, hidden: !showingNavigationDropdown }"
             class="sm:hidden"
@@ -142,7 +156,6 @@ const onLogout = async () => {
             </ResponsiveNavLink>
           </div>
 
-          <!-- Responsive Settings Options -->
           <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
               <div class="font-medium text-base text-gray-800">
@@ -161,14 +174,12 @@ const onLogout = async () => {
         </div>
       </nav>
 
-      <!-- Page Heading -->
       <header v-if="$slots.header" class="bg-white shadow">
         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <slot name="header"/>
         </div>
       </header>
 
-      <!-- Page Content -->
       <main>
         <slot/>
       </main>
