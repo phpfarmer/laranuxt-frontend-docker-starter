@@ -6,7 +6,7 @@ export default defineNuxtPlugin(NuxtApp => {
     NuxtApp.provide('apiCallPOST', async (url, options) => {
         return useFetch(url, Object.assign({}, {
             method: 'POST',
-            baseURL: 'http://localhost:8089',
+            baseURL: `${config.public.apiBaseUrl}`,
             credentials: 'include',
             headers: {
                 Accept: 'application/json',
@@ -20,7 +20,7 @@ export default defineNuxtPlugin(NuxtApp => {
     NuxtApp.provide('apiCallGET', async (url, options) => {
         return useFetch(url, Object.assign({}, {
             method: 'GET',
-            baseURL: 'http://localhost:8089',
+            baseURL: `${config.public.apiBaseUrl}`,
             credentials: 'include',
             headers: {
                 Accept: 'application/json',
@@ -34,7 +34,7 @@ export default defineNuxtPlugin(NuxtApp => {
     NuxtApp.provide('apiCallDELETE', async (url, options) => {
         return useFetch(url, Object.assign({}, {
             method: 'DELETE',
-            baseURL: 'http://localhost:8089',
+            baseURL: `${config.public.apiBaseUrl}`,
             credentials: 'include',
             headers: {
                 Accept: 'application/json',
