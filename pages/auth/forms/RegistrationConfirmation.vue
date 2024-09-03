@@ -30,7 +30,7 @@ import {AlartErrorMessage, AlartSuccessMessage, FormHeader} from '~/components/F
 import {PrimaryButton} from "~/components/UI/index.js";
 
 const props = defineProps({
-  value: { type: Object, default: () => ({ email: '', password: '', message: '' }) },
+  value: { type: Object, default: () => ({ id: '', email: '' }) },
 });
 
 const success = ref(false);

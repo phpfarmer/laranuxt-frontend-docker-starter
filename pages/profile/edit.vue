@@ -2,9 +2,10 @@
 import DeleteUserForm from './partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './partials/UpdateProfileInformationForm.vue';
-import {useNuxtApp, useState} from "nuxt/app";
+import {useState} from "nuxt/app";
 import ResponsiveNavLink from '@/components/UI/ResponsiveNavLink.vue';
 import {useAuthStore} from "../../stores/auth";
+import WidgetBox from "~/components/UI/WidgetBox.vue";
 
 defineProps({
   mustVerifyEmail: Boolean,
@@ -16,27 +17,50 @@ definePageMeta({
   middleware: 'auth'
 })
 
-const {$apiCallPOST, $apiCallGET} = useNuxtApp()
-
 const title = useState('title')
-
-async function csrf() {
-  return $apiCallGET('/sanctum/csrf-cookie')
-}
 
 const auth = useAuthStore()
 const router = useRouter()
-const onLogout = async () => {
-  await csrf();
 
+const onLogout = async () => {
   try {
-    await $apiCallPOST('/logout')
-    auth.logout()
-    router.push('/auth/login')
+    await auth.logout();
+    router.push('/auth/login');
   } catch (e) {
     console.log(e);
   }
 }
+
+onMounted(async () => {
+  await fetchAndSetProfileData();
+})
+
+const fetchAndSetProfileData = async () => {
+  const userData = await auth.fetchUserProfileData();
+
+  if (userData) {
+    form.value.user.id = userData.id || '';
+    form.value.user.name = userData.name || '';
+    form.value.user.email = userData.email || '';
+    form.value.user.email_update = userData.email_update || null;
+  }
+}
+
+const form = ref({
+  user: {
+    id: '',
+    name: '',
+    email: '',
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+    email_update: '',
+  }
+});
+
+const updateUser = (newValue) => {
+  form.value.user = newValue;
+};
 </script>
 
 <template>
@@ -44,39 +68,26 @@ const onLogout = async () => {
     <Title>Profile | {{ title }}</Title>
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-      <div class="container mx-auto flex">
+      <div class="container mx-auto flex flex-wrap md:flex-nowrap">
         <!-- Left Column (Account Links) -->
-        <div class="w-1/3 px-4">
-          <div class="bg-white p-4 rounded shadow">
-            <h2 class="mb-4 font-semibold pl-1 pt-2">Account Settings</h2>
+        <div class="w-full md:w-1/3 px-4 mb-6 md:mb-0">
+          <widget-box title="Account Settings">
             <ul>
               <ResponsiveNavLink :active="true" :href="'/profile/edit'"> Profile</ResponsiveNavLink>
               <ResponsiveNavLink as="button" method="post" @click="onLogout">
-                Log Out
+                Log out
               </ResponsiveNavLink>
             </ul>
-          </div>
+          </widget-box>
         </div>
 
         <!-- Right Column (Settings Form) -->
-        <div class="w-2/3 px-4">
+        <div class="w-full md:w-2/3 px-4">
+          <UpdateProfileInformationForm :value="form.user" @update:value="updateUser" />
 
-          <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">
-            <UpdateProfileInformationForm
-                :must-verify-email="mustVerifyEmail"
-                :status="status"
-                class="max-w-full"
-            />
-          </div>
+          <UpdatePasswordForm :value="form.user" @update:value="updateUser" />
 
-          <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">
-            <UpdatePasswordForm class="max-w-full"/>
-          </div>
-
-          <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">
-            <DeleteUserForm class="max-w-full"/>
-          </div>
-
+          <DeleteUserForm :value="form.user" @update:value="updateUser" />
         </div>
       </div>
     </div>

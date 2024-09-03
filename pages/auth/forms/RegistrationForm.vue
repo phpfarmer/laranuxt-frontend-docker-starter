@@ -86,7 +86,7 @@
         </Checkbox>
       </div>
 
-      <PrimaryButton :disabled="isSubmitDisabled" class="mb-5" type="submit">
+      <PrimaryButton :disabled="pending" class="mb-5" type="submit">
         Register
       </PrimaryButton>
 
@@ -108,16 +108,16 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRuntimeConfig } from '#app';
 import { useVuelidate } from '@vuelidate/core';
-import { minLength, required, email, sameAs } from '@vuelidate/validators';
+import { minLength, required, email, helpers } from '@vuelidate/validators';
 import {FormHeader, AlartErrorMessage, AlartSuccessMessage} from '~/components/Form/index.js';
 import {PrimaryButton, InputLabel, TextInput, Checkbox} from '~/components/UI/index';
 
 const props = defineProps({
-  value: { type: Object, default: () => ({ email: '', password: '', message: '' }) },
+  value: { type: Object, default: () => ({ name: '', email: '', password: '', message: '', password_confirmation: '', is_terms_and_condition: false, is_privacy_policy: false }) },
 });
 
-const success = ref('');
-const pending = ref(true);
+const success = ref(false);
+const pending = ref(false);
 const error = ref(false);
 const message = ref(props.value.message || '');
 
@@ -126,7 +126,14 @@ const rules = {
     name: { required },
     email: { required, email },
     password: { required, minLength: minLength(8) },
-    password_confirmation: { required, sameAsPassword: sameAs(ref('password'), 'Passwords must match') },
+    password_confirmation: {required,
+      sameAsPassword: helpers.withParams(
+          { type: 'sameAsPassword', message: 'Passwords must match.' },
+          function (fieldValue, parentVm) {
+            return fieldValue === parentVm.password;
+          }
+      )
+    },
     is_terms_and_condition: {mustAgree: value => value === true},
     is_privacy_policy: {mustAgree: value => value === true},
   },
@@ -141,8 +148,13 @@ const router = useRouter();
 const emit = defineEmits(['continueNext']);
 
 const onSubmit = async () => {
-  const config = useRuntimeConfig();
   v$.value.$touch();
+  if (isSubmitDisabled.value) {
+    return false;
+  }
+
+  const config = useRuntimeConfig();
+  success.value = false;
   error.value = false;
   message.value = null;
   pending.value = true;

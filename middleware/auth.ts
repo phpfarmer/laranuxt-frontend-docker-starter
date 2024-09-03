@@ -1,10 +1,15 @@
-import {useAuthStore} from '~/stores/auth'
+import {defineNuxtRouteMiddleware} from "nuxt/app";
+import { useAuthStore } from '~/stores/auth';
 
-export default defineNuxtRouteMiddleware((to) => {
-    const auth = useAuthStore()
+export default defineNuxtRouteMiddleware(async (to, from) => {
+    const authStore = useAuthStore();
     const router = useRouter()
 
-    if (!auth.isUserLoggedIn) {
+    if (!authStore.user) {
+        await authStore.fetchUser();
+    }
+
+    if (!authStore.user && to.path !== '/login') {
         return router.push({
             path: '/auth/login',
             query: {
@@ -12,4 +17,4 @@ export default defineNuxtRouteMiddleware((to) => {
             },
         })
     }
-})
+});
