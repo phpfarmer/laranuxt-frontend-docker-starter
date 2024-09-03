@@ -5,6 +5,7 @@ import UpdateProfileInformationForm from './partials/UpdateProfileInformationFor
 import {useState} from "nuxt/app";
 import ResponsiveNavLink from '@/components/UI/ResponsiveNavLink.vue';
 import {useAuthStore} from "../../stores/auth";
+import WidgetBox from "~/components/UI/WidgetBox.vue";
 
 defineProps({
   mustVerifyEmail: Boolean,
@@ -67,38 +68,26 @@ const updateUser = (newValue) => {
     <Title>Profile | {{ title }}</Title>
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-      <div class="container mx-auto flex">
+      <div class="container mx-auto flex flex-wrap md:flex-nowrap">
         <!-- Left Column (Account Links) -->
-        <div class="w-1/3 px-4">
-          <div class="bg-white p-4 rounded shadow">
-            <h2 class="mb-4 font-semibold pl-1 pt-2">Account Settings</h2>
+        <div class="w-full md:w-1/3 px-4 mb-6 md:mb-0">
+          <widget-box title="Account Settings">
             <ul>
               <ResponsiveNavLink :active="true" :href="'/profile/edit'"> Profile</ResponsiveNavLink>
               <ResponsiveNavLink as="button" method="post" @click="onLogout">
                 Log out
               </ResponsiveNavLink>
             </ul>
-          </div>
+          </widget-box>
         </div>
 
         <!-- Right Column (Settings Form) -->
-        <div class="w-2/3 px-4">
+        <div class="w-full md:w-2/3 px-4">
+          <UpdateProfileInformationForm :value="form.user" @update:value="updateUser" />
 
-          <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">
-            <UpdateProfileInformationForm
-                :value="form.user" @update:value="updateUser"
-                class="max-w-full"
-            />
-          </div>
+          <UpdatePasswordForm :value="form.user" @update:value="updateUser" />
 
-          <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">
-            <UpdatePasswordForm :value="form.user" @update:value="updateUser" class="max-w-full"/>
-          </div>
-
-          <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg mb-5">
-            <DeleteUserForm :value="form.user" @update:value="updateUser" class="max-w-full"/>
-          </div>
-
+          <DeleteUserForm :value="form.user" @update:value="updateUser" />
         </div>
       </div>
     </div>

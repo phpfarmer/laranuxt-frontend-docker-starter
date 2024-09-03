@@ -36,7 +36,7 @@ const userInitials = computed(() => {
     >
       {{ userInitials }}
     </div>
-    <div class="ml-4">
+    <div class="ml-4 w-64">
       <p class="text-sm font-medium text-gray-900">{{ user?.name }}</p>
       <p class="text-sm text-gray-500 truncate max-w-[30ch]" title="{{ user?.email }}">{{ user?.email }}</p>
     </div>
