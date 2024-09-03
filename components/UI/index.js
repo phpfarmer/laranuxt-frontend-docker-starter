@@ -12,6 +12,8 @@ import PrimaryButton from './PrimaryButton';
 import ResponsiveNavLink from './ResponsiveNavLink';
 import SecondaryButton from './SecondaryButton';
 import TextInput from './TextInput';
+import ContentBox from './ContentBox';
+import WidgetBox from './WidgetBox';
 
 export {
     Checkbox,
@@ -28,4 +30,6 @@ export {
     ResponsiveNavLink,
     SecondaryButton,
     TextInput,
+    ContentBox,
+    WidgetBox,
 }

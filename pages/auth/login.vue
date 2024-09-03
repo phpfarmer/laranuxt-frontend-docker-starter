@@ -19,7 +19,6 @@ const form = ref({
   user: {
     email: '',
     password: '',
-    message: '',
   }
 });
 

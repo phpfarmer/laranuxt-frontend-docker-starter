@@ -52,7 +52,7 @@ const handleInput = (event) => {
         :placeholder="placeholder"
         :value="modelValue"
         :type="type"
-        class="mt-0 block w-full px-0.5 border-0 border-b-2 border-gray-200 focus:ring-0 focus:border-black"
+        class="mt-0 block w-full px-0.5 border-0 border-b-2 border-gray-200 focus:ring-0 focus:border-black transition duration-300"
         @input="handleInput"
     />
   </InputBase>

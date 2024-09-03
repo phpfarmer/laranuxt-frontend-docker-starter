@@ -1,209 +1,147 @@
 <script setup>
-import InputError from '~/components/UI/InputError.vue';
-import InputLabel from '~/components/UI/InputLabel.vue';
-import PrimaryButton from '~/components/UI/PrimaryButton.vue';
-import TextInput from '~/components/UI/TextInput.vue';
-import {computed, onMounted, ref, watch} from "vue";
-import * as yup from "yup";
-import {useField, useForm} from "vee-validate";
-import {useAuthStore} from "~/stores/auth";
-import {useAuthStorage} from "~/composables/auth";
-import {UNKNOWN_SERVER_ERROR_MESSAGE} from "~/static/texts";
-import FormHeader from '~/components/Form/FormHeader.vue';
-import FormTooManyAttempt from '~/components/Form/TooManyAttempt';
-
-import AlartErrorMessage from '~/components/Form/AlartErrorMessage';
-import AlartSuccessMessage from '~/components/Form/AlartSuccessMessage';
-import {useNuxtApp, useRoute, useRouter} from "nuxt/app";
-
+import { required, email } from '@vuelidate/validators';
+import { useAuthStore } from '~/stores/auth';
+import { useRuntimeConfig, useRouter } from 'nuxt/app';
+import { FormTooManyAttempt, AlartErrorMessage, AlartSuccessMessage } from '~/components/Form/index.js';
+import { useFormHandler } from '~/composables/useFormHandler';
+import {InputLabel, PrimaryButton, TextInput, ContentBox} from "~/components/UI/index.js";
 
 const props = defineProps({
-  mustVerifyEmail: Boolean,
-  status: String,
+  value: { type: Object, default: () => ({ id: '', name: '', email: '', email_update: null }) },
 });
 
-const {$apiCallPOST, $apiCallGET} = useNuxtApp()
+const router = useRouter();
+const auth = useAuthStore();
 
-async function csrf() {
-  return $apiCallGET('/sanctum/csrf-cookie')
-}
+const rules = {
+  value: {
+    name: { required },
+    email: { required, email },
+  },
+};
 
-const router = useRouter()
-const route = useRoute()
-
-const name = ref(null);
-const email = ref(null);
-const success = ref(null)
-const error = ref(null);
-const errorFields = ['name', 'email'];
-
-const schema = yup.object({
-  name: yup.string().required().label('Name'),
-  email: yup.string().required().label('Email'),
-})
-
-const {handleSubmit, errors, isSubmitting, submitCount} = useForm({
-  validationSchema: schema,
-})
-
-const {value: nameValue} = useField('name');
-const {value: emailValue} = useField('email');
-
-const auth = useAuthStore()
-const {store} = useAuthStorage()
-
-const isTooManyAttempts = computed(() => {
-  return submitCount.value >= 5
+const { v$, loading, success, error, message, isSubmitDisabled, isTooManyAttempts, onSubmit, apiRequest } = useFormHandler(rules, props, {
+  url: `${useRuntimeConfig().public.apiBaseUrl}/api/account/profile`,
+  method: 'POST',
 });
 
-const isSubmitDisabled = computed(() => {
-  return isSubmitting.value
-})
+const handleSubmitProfileInformation = async () => {
+  if (isSubmitDisabled.value) return;
 
-const isValidationErrorExists = computed(() => {
-  return Object.keys(errors.value).filter(fieldName => errorFields.some(key => key === fieldName)).length > 0
-})
-
-onMounted(async () => {
-  await fetchAndSetProfileData();
-})
-
-const fetchAndSetProfileData = async () => {
-  await csrf();
-  const {data: user} = await $apiCallGET('/api/account/profile', {
-    onResponseError({request, response}) {
-      error.value = (response?._data?.message) ? response._data?.message : UNKNOWN_SERVER_ERROR_MESSAGE
+  try {
+    const responseData = await onSubmit();
+    await auth.setUser();
+    if (responseData?.data?.email_update) {
+      props.value.email_update = responseData?.data?.email_update;
+    } else {
+      props.value.email_update = null;
     }
-  });
+  } catch (err) {
+    console.error('Submission error:', err);
+  }
+};
 
-  const {name, email} = user.value
-  nameValue.value = name
-  emailValue.value = email
-}
+const resendVerification = async () => {
+  error.value = false;
+  success.value = false;
+  message.value = null;
+  loading.value = true;
 
-const onSubmit = handleSubmit(async (values) => {
-  await csrf();
-  isSubmitting.value = true
-  success.value = null;
-  error.value = null;
+  try {
+    const responseData = await apiRequest(`${useRuntimeConfig().public.apiBaseUrl}/api/account/email/verification-notification`, 'POST', {
+      id: props.value.id,
+      email: props.value.email_update.email,
+    });
 
-  await $apiCallPOST('/api/account/profile', {
-    body: values,
-    async onResponse({request, response, options}) {
-      isSubmitting.value = false
+    message.value = responseData.message;
+    success.value = true;
+  } catch (err) {
+    message.value = err.message;
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+};
 
-      if (response.status === 200) {
-        success.value = response._data?.message;
+const cancelEmailUpdate = async () => {
+  error.value = false;
+  success.value = false;
+  message.value = null;
+  loading.value = true;
 
-        const {data: user} = await $apiCallGET('/api/account/profile')
+  try {
+    const responseData = await apiRequest(`${useRuntimeConfig().public.apiBaseUrl}/api/account/email/verification-notification`, 'DELETE', {
+      id: props.value.id,
+      email: props.value.email_update.email,
+    });
 
-        watch(user, (loggedInUser) => {
-          store(loggedInUser)
-          auth.user = loggedInUser
-          auth.loggedIn = true
-
-          if (route.query?.next) {
-            //return router.push({
-            //  path: route.query.next
-            //})
-          } else {
-            //return router.push({
-            //  path: '/account/dashboard'
-            //})
-            //window.location.pathname = '/account/dashboard'
-          }
-        }, {
-          deep: true,
-          immediate: true
-        })
-      }
-    },
-    onResponseError({request, response}) {
-      error.value = (response?._data?.message) ? response._data?.message : UNKNOWN_SERVER_ERROR_MESSAGE
-    }
-  })
-
-  isSubmitting.value = false
-})
+    message.value = responseData.message;
+    success.value = true;
+    props.value.email_update = null;
+  } catch (err) {
+    message.value = err.message;
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+};
 </script>
 
 <template>
-  <section>
-    <header class="space-y-2 mb-4">
-      <h2 class="text-lg font-medium text-gray-900">Profile Information</h2>
-      <p class="mt-1 text-sm text-gray-600">
-        Update your account's profile information and email address.
-      </p>
-    </header>
+  <content-box>
+    <template v-slot:content-title>
+      Profile Information
+    </template>
+    <template v-slot:content-sub-title>
+      Update your account's profile information and email address.
+    </template>
 
-    <AlartSuccessMessage v-if="success && !isTooManyAttempts">{{ success }}</AlartSuccessMessage>
-    <AlartErrorMessage v-if="error && !isTooManyAttempts">{{ error }}</AlartErrorMessage>
+    <template v-slot:default>
+      <AlartSuccessMessage v-if="success && !isTooManyAttempts">{{ message }}</AlartSuccessMessage>
+      <AlartErrorMessage v-if="error && !isTooManyAttempts">{{ message }}</AlartErrorMessage>
 
-    <form v-if="!isTooManyAttempts" class="mt-6 space-y-6" @submit.prevent="onSubmit">
-      <div>
-        <InputLabel for="name" value="Name"/>
+      <form v-if="!isTooManyAttempts" class="mt-6 space-y-6" @submit.prevent="handleSubmitProfileInformation">
+        <div>
+          <InputLabel for="name" value="Name"/>
 
-        <TextInput
-            id="name"
-            v-model="nameValue"
-            autocomplete="name"
-            autofocus
-            class="mt-1 block w-full"
-            required
-            type="text"
-        />
-
-        <InputError :message="errors.name" class="mt-2"/>
-      </div>
-
-      <div>
-        <InputLabel for="email" value="Email"/>
-
-        <TextInput
-            id="email"
-            v-model="emailValue"
-            autocomplete="email"
-            class="mt-1 block w-full"
-            required
-            type="email"
-        />
-
-        <InputError :message="errors.email" class="mt-2"/>
-      </div>
-
-      <div v-if="props.mustVerifyEmail">
-        <p class="text-sm mt-2 text-gray-800">
-          Your email address is unverified.
-          <Link
-              :href="route('verification.send')"
-              as="button"
-              class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-              method="post"
-          >
-            Click here to re-send the verification email.
-          </Link>
-        </p>
-
-        <div
-            v-show="props.status === 'verification-link-sent'"
-            class="mt-2 font-medium text-sm text-green-600"
-        >
-          A new verification link has been sent to your email address.
+          <TextInput
+              id="name"
+              v-model="value.name"
+              :validationObject="v$.value.name"
+              autofocus
+              class="mt-1 block w-full"
+              required
+              type="text"
+          />
         </div>
-      </div>
 
-      <div class="flex items-center gap-4">
-        <PrimaryButton :disabled="isSubmitDisabled || isValidationErrorExists" type="submit">Save</PrimaryButton>
+        <div>
+          <InputLabel for="email" value="Email"/>
 
-        <Transition class="transition ease-in-out" enter-from-class="opacity-0" leave-to-class="opacity-0">
-          <p v-if="false" class="text-sm text-gray-600">Saved.</p>
-        </Transition>
-      </div>
-    </form>
+          <TextInput
+              id="email"
+              v-model="value.email"
+              :validationObject="v$.value.email"
+              class="mt-1 block w-full"
+              required
+              type="email"
+          />
+        </div>
 
-    <div v-if="isTooManyAttempts" class="rounded-lg px-10 py-8 w-full max-w-md mx-auto text-left">
-      <FormHeader class="text-left" subTitle="Too many attempts to submit" title="Stop!"/>
-      <FormTooManyAttempt>Please try again later after some time.</FormTooManyAttempt>
-    </div>
-  </section>
+        <div v-if="props.value.email_update">
+          <p class="text-sm mt-2 text-gray-800">
+            Your new email address <strong>{{ props.value.email_update.email }}</strong> is not verified.
+            Please check your email and click the verification link. Didn’t get it?
+            <a href="#" @click.prevent="resendVerification" class="text-red-800">Resend verification email</a> or <a href="#" class="text-red-800" @click.prevent="cancelEmailUpdate">cancel this change</a>.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <PrimaryButton :disabled="loading" type="submit">Save</PrimaryButton>
+        </div>
+      </form>
+
+      <FormTooManyAttempt v-if="isTooManyAttempts">Please try again later after some time.</FormTooManyAttempt>
+    </template>
+  </content-box>
 </template>

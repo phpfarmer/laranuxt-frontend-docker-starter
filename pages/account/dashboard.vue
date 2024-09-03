@@ -9,6 +9,11 @@ definePageMeta({
 
 const title = useState('title')
 const auth = useAuthStore()
+const fetchedUser = ref(null);
+
+onMounted(async () => {
+  fetchedUser.value = await auth.fetchUserProfileData();
+});
 </script>
 
 <template>
@@ -19,7 +24,7 @@ const auth = useAuthStore()
         <div class="p-6 text-gray-900">You're logged in!</div>
 
         <div class="p-6 mb-4 text-sm text-gray-600">
-          <pre>{{ auth.user }}</pre>
+          <pre>{{ fetchedUser }}</pre>
         </div>
         
       </div>
